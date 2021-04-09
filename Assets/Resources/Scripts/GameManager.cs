@@ -64,6 +64,11 @@ public class GameManager : MonoBehaviour
 			this.overlayOnTime = 1.0f;
 			this.overlayOnTimeDelay = overlayOnTime * 0.2f;
 
+			this.idSequence.Clear();
+			this.idSequenceCopy.Clear();
+			this.idSequenceCheck.Clear();
+
+
 			NextStep();
 
 			init = false;
