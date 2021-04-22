@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
+	public bool RUNSM = false;
 	public bool init = false;
 	public bool init2 = false;
     public bool initDone { get; private set; }
@@ -23,6 +24,7 @@ public class GameManager : MonoBehaviour
 	public static GameManager Instance { get { return _instance; } }
 	public GameObject gameOverMenu { get; set; }
 	public SoundManager sm { get; private set; }
+	public ScoreManager scoreManager { get; private set; }
 
 	void Awake()
     {
@@ -53,6 +55,8 @@ public class GameManager : MonoBehaviour
 		idSequenceCopy = new List<int>();
 
 		this.sm = transform.GetComponent<SoundManager>();
+		this.scoreManager = new ScoreManager();
+		this.scoreManager.Init();
 		LoadHighscoreScreen();
 	}
 	
@@ -86,6 +90,12 @@ public class GameManager : MonoBehaviour
 			GameObject.Find("ButtonPanel").transform.Find("Start").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(0); });
 			GameObject.Find("ButtonPanel").transform.Find("Reset").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(1); });
 			GameObject.Find("ButtonPanel").transform.Find("Quit").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(2); });
+			GameObject.Find("RegisterMenu").transform.Find("Create").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(4); });
+			if (this.scoreManager.isRegisterd)
+			{
+				GameObject.Find("RegisterMenu").SetActive(false);
+				GameObject.Find("MainMenu").transform.Find("SignedInUser").transform.GetComponent<Text>().text = "Playing as : " + PlayerPrefs.GetString("username");
+			}
 			init2 = false;
 
 		}
@@ -155,6 +165,7 @@ public class GameManager : MonoBehaviour
 				if (PlayerPrefs.GetInt("Highscore") < this.idSequence.Count)
                 {
 					PlayerPrefs.SetInt("Highscore", this.idSequence.Count);
+					this.scoreManager.UploadScore(this.idSequence.Count.ToString(), "1");
 				}
 
 				gameOverMenu.SetActive(true);
@@ -228,6 +239,9 @@ public class GameManager : MonoBehaviour
 			case 3:
 				SceneManager.LoadScene(0);
 				this.init2 = true;
+				break;
+			case 4:
+				this.scoreManager.Register(GameObject.Find("RegisterMenu").transform.Find("UsernameField").GetComponent<InputField>().text);
 				break;
 		}
     }
