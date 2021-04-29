@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -25,6 +25,14 @@ public class GameManager : MonoBehaviour
 	public GameObject gameOverMenu { get; set; }
 	public SoundManager sm { get; private set; }
 	public ScoreManager scoreManager { get; private set; }
+
+	public GameObject UI_MainMenu { get; set; }
+	public GameObject UI_AccountMenu { get; set; }
+	public GameObject UI_RegisterMenu { get; set; }
+	public GameObject UI_DifficultyMenu { get; set; }
+
+	public int difficultyId { get; private set; }
+
 
 	void Awake()
     {
@@ -57,7 +65,6 @@ public class GameManager : MonoBehaviour
 		this.sm = transform.GetComponent<SoundManager>();
 		this.scoreManager = new ScoreManager();
 		this.scoreManager.Init();
-		LoadHighscoreScreen();
 	}
 	
 	// Update is called once per frame
@@ -65,9 +72,6 @@ public class GameManager : MonoBehaviour
 	{
 		if (init && SceneManager.GetActiveScene().name == "Game")
 		{
-			this.overlayOnTime = 1.0f;
-			this.overlayOnTimeDelay = overlayOnTime * 0.2f;
-
 			this.idSequence.Clear();
 			this.idSequenceCopy.Clear();
 			this.idSequenceCheck.Clear();
@@ -79,22 +83,55 @@ public class GameManager : MonoBehaviour
             initDone = true;
 			gameOverMenu = GameObject.Find("GameOverMenu");
 			gameOverMenu.SetActive(false);
-
-			GameObject.Find("SpeedPanel").transform.Find("Slider").GetComponent<Slider>().onValueChanged.AddListener(delegate { SetSequenceSpeed(); });
 			Debug.Log("Init Done!");
 		}
 
 		if (init2 && SceneManager.GetActiveScene().name == "MainMenu")
         {
-			LoadHighscoreScreen();
+			if (this.UI_MainMenu == null)
+            {
+				this.UI_MainMenu = GameObject.Find("MainMenu");
+			}
+
+			if (this.UI_AccountMenu == null)
+			{
+				this.UI_AccountMenu = GameObject.Find("AccountMenu");
+			}
+
+			if (this.UI_RegisterMenu == null)
+			{
+				this.UI_RegisterMenu = GameObject.Find("RegisterMenu");
+			}
+			
+			if (this.UI_DifficultyMenu == null)
+			{
+				this.UI_DifficultyMenu = GameObject.Find("DifficultyMenu");
+			}
+			
+			this.UI_RegisterMenu.SetActive(true);
+			this.UI_DifficultyMenu.SetActive(true);
+
 			GameObject.Find("ButtonPanel").transform.Find("Start").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(0); });
-			GameObject.Find("ButtonPanel").transform.Find("Reset").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(1); });
+			GameObject.Find("ButtonPanel").transform.Find("Account").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(1); });
 			GameObject.Find("ButtonPanel").transform.Find("Quit").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(2); });
-			GameObject.Find("RegisterMenu").transform.Find("Create").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(4); });
+
+			this.UI_RegisterMenu.transform.Find("RM").Find("Create").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(4); });
+			this.UI_RegisterMenu.transform.Find("LM").transform.Find("Login").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(5); });
+			this.UI_AccountMenu.transform.Find("Return").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(8); });
+			this.UI_AccountMenu.transform.Find("Logout").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(6); });
+			this.UI_AccountMenu.transform.Find("CopyKey").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(7); });
+			
+			this.UI_DifficultyMenu.transform.Find("Slow").GetComponent<Button>().onClick.AddListener(delegate { StartGameAction(0); });
+			this.UI_DifficultyMenu.transform.Find("Normal").GetComponent<Button>().onClick.AddListener(delegate { StartGameAction(1); });
+			this.UI_DifficultyMenu.transform.Find("Fast").GetComponent<Button>().onClick.AddListener(delegate { StartGameAction(2); });
+
+
+			this.UI_AccountMenu.SetActive(false);
+			this.UI_DifficultyMenu.SetActive(false);
 			if (this.scoreManager.isRegisterd)
 			{
-				GameObject.Find("RegisterMenu").SetActive(false);
-				GameObject.Find("MainMenu").transform.Find("SignedInUser").transform.GetComponent<Text>().text = "Playing as : " + PlayerPrefs.GetString("username");
+				this.UI_RegisterMenu.SetActive(false);
+				Debug.Log("User account has accessKey, closing register menu!");
 			}
 			init2 = false;
 
@@ -161,11 +198,24 @@ public class GameManager : MonoBehaviour
 				sm.PlaySound(9);
 				Debug.Log("GameOver!");
 				this.ToggleInput(0);
-
-				if (PlayerPrefs.GetInt("Highscore") < this.idSequence.Count)
+				string localdofficultyScoreName = "";
+                switch (this.difficultyId)
                 {
-					PlayerPrefs.SetInt("Highscore", this.idSequence.Count);
-					this.scoreManager.UploadScore(this.idSequence.Count.ToString(), "1");
+					case 0:
+						localdofficultyScoreName = "highscore_slow";
+						break;
+					case 1:
+						localdofficultyScoreName = "highscore_norm";
+						break;
+					case 2:
+						localdofficultyScoreName = "highscore_fast";
+						break;
+				}
+
+                if (PlayerPrefs.GetInt(localdofficultyScoreName) < this.idSequence.Count)
+                {
+					PlayerPrefs.SetInt(localdofficultyScoreName, this.idSequence.Count);
+					this.scoreManager.UploadScore(this.idSequence.Count.ToString(), this.difficultyId);
 				}
 
 				gameOverMenu.SetActive(true);
@@ -226,33 +276,87 @@ public class GameManager : MonoBehaviour
         switch (id)
         {
 			case 0:
-				SceneManager.LoadScene(1);
-				this.init = true;
+				// Opens DifficultyMenu
+				this.UI_DifficultyMenu.SetActive(true);
 				break;
 			case 1:
-				PlayerPrefs.DeleteAll();
-				LoadHighscoreScreen();
+				// Opens AccountMenu
+				this.UI_AccountMenu.SetActive(true);
+				LoadAccountScreen();
 				break;
 			case 2:
+				// Quits application
 				Application.Quit();
 				break;
 			case 3:
+				// Loads MainMenu Scean
 				SceneManager.LoadScene(0);
 				this.init2 = true;
 				break;
 			case 4:
-				this.scoreManager.Register(GameObject.Find("RegisterMenu").transform.Find("UsernameField").GetComponent<InputField>().text);
+				// Runs register user
+				this.scoreManager.Register(this.UI_RegisterMenu.transform.Find("RM").Find("UsernameField").GetComponent<InputField>().text);
+				this.UI_RegisterMenu.transform.Find("RM").Find("UsernameField").GetComponent<InputField>().text = "";
+				break;
+			case 5:
+				// Runs login user
+				this.scoreManager.Login(this.UI_RegisterMenu.transform.Find("LM").Find("AccessKeyField").GetComponent<InputField>().text);
+				this.UI_RegisterMenu.transform.Find("LM").Find("AccessKeyField").GetComponent<InputField>().text = "";
+				break;
+			case 6:
+				// Logs user out and removes local data
+				PlayerPrefs.DeleteAll();
+				this.scoreManager.isRegisterd = false;
+				this.init2 = true;
+				break;
+			case 7:
+				// Copy user access key to clipboard
+				GUIUtility.systemCopyBuffer = PlayerPrefs.GetString("accessKey");
+				break;
+			case 8:
+				// Closes AccountMenu
+				this.UI_AccountMenu.SetActive(false);
 				break;
 		}
     }
-	
-	public void LoadHighscoreScreen()
+
+	public void StartGameAction(int difficulty)
+	{
+		// Loads Game Scean
+		switch (difficulty)
+		{
+			case 0:
+				// Slow
+				this.difficultyId = 0;
+				break;
+			case 1:
+				// Normal
+				this.difficultyId = 1;
+				break;
+			case 2:
+				// Fast
+				this.difficultyId = 2;
+				break;
+		}
+		SetSequenceSpeed();
+		SceneManager.LoadScene(1);
+		this.init = true;
+	}
+
+	public void LoadAccountScreen()
+    {
+		this.UI_AccountMenu.transform.Find("Username").GetComponent<Text>().text = PlayerPrefs.GetString("username");
+		this.UI_AccountMenu.transform.Find("ScorePanel").Find("Score_Slow_Value").GetComponent<Text>().text = HighScoreParse(PlayerPrefs.GetInt("highscore_slow"));
+		this.UI_AccountMenu.transform.Find("ScorePanel").Find("Score_Norm_Value").GetComponent<Text>().text = HighScoreParse(PlayerPrefs.GetInt("highscore_norm"));
+		this.UI_AccountMenu.transform.Find("ScorePanel").Find("Score_Fast_Value").GetComponent<Text>().text = HighScoreParse(PlayerPrefs.GetInt("highscore_fast"));
+	}
+
+	public string HighScoreParse(int input)
     {
 		string temp = "";
-		string temp2 = PlayerPrefs.GetInt("Highscore").ToString();
-
+		string temp2 = input.ToString();
 		if (temp2.Length != 0)
-        {
+		{
 			if (temp2.Length == 1)
 			{
 				temp = "00" + temp2;
@@ -267,15 +371,28 @@ public class GameManager : MonoBehaviour
 			}
 		}
 		else
-        {
+		{
 			temp = "000";
-        }
+		}
 
-		GameObject.Find("HighScoreValue").GetComponent<Text>().text = temp;
+		return temp;
 	}
+
 	public void SetSequenceSpeed()
     {
-		this.overlayOnTime = GameObject.Find("SpeedPanel").transform.Find("Slider").GetComponent<Slider>().value;
+        switch (this.difficultyId)
+        {
+			case 0:
+				this.overlayOnTime = 0.75f;
+				break;
+			case 1:
+				this.overlayOnTime = 0.5f;
+				break;
+			case 2:
+				this.overlayOnTime = 0.1f;
+				break;
+		}
+        
 		this.overlayOnTimeDelay = this.overlayOnTime * 0.2f;
 
 	}
