@@ -36,7 +36,7 @@ public class ScoreManager
     public bool initiated { get; private set; } = false;
     private string accessKey { get; set; } = "jkvA4YRMuNrCvrr7x5bqPFffGYXRVvHL";
     public bool isRegisterd { get; set; } = false;
-    public string serverUrl { get; private set; } = "http://sequence_server.local/";
+    public string serverUrl { get; private set; } = "http://sequence_server.local/callback.php";
 
     public void Init()
     {
