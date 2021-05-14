@@ -36,7 +36,7 @@ public class ScoreManager
     public bool initiated { get; private set; } = false;
     private string accessKey { get; set; } = "jkvA4YRMuNrCvrr7x5bqPFffGYXRVvHL";
     public bool isRegisterd { get; set; } = false;
-    public string serverUrl { get; private set; } = "http://sequence_server.local/callback.php";
+    public string serverUrl { get; private set; } = "http://sequence.offthegridcg.me/callback.php";
 
     public void Init()
     {
@@ -52,6 +52,8 @@ public class ScoreManager
 
     public async void UploadScore(string score, int difficulty)
     {
+        string requestUrl = serverUrl + "?action=update";
+
         if (this.isRegisterd)
         {
             FormUrlEncodedContent postData = new FormUrlEncodedContent(new[]
@@ -60,8 +62,8 @@ public class ScoreManager
             new KeyValuePair<string, string>("score", score),
             new KeyValuePair<string, string>("diff", difficulty.ToString()),
             });
-
-            HttpResponseMessage httpResponse = await client.PostAsync(serverUrl, postData);
+            
+            HttpResponseMessage httpResponse = await client.PostAsync(requestUrl, postData);
             ResponseObject ro = ResponseObject.CreateFromJSON(await httpResponse.Content.ReadAsStringAsync());
 
             if (ro.responseCode.Contains("e"))
@@ -81,46 +83,58 @@ public class ScoreManager
 
     public async void Register(string username)
     {
-        if (username.Length < 1)
+        if (!this.isRegisterd)
         {
-            GameObject.Find("RegisterMenu").transform.Find("ErrorMessage").GetComponent<UnityEngine.UI.Text>().text = "Username can not be empty!";
-            return;
-        }
+            if (username.Length < 1)
+            {
+                GameObject.Find("RegisterMenu").transform.Find("ErrorMessage").GetComponent<UnityEngine.UI.Text>().text = "Username can not be empty!";
+                return;
+            }
 
-        FormUrlEncodedContent postData = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("startupKey", accessKey),
-            new KeyValuePair<string, string>("username", username),
-        });
+            FormUrlEncodedContent postData = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("startupKey", accessKey),
+                new KeyValuePair<string, string>("username", username.ToString()),
+            }); ;
 
-        HttpResponseMessage httpResponse = await client.PostAsync(serverUrl, postData);
-        ResponseObject ro = ResponseObject.CreateFromJSON(await httpResponse.Content.ReadAsStringAsync());
+            HttpResponseMessage httpResponse = await client.PostAsync(serverUrl + "?action=reg", postData);
+            Debug.Log(await httpResponse.Content.ReadAsStringAsync());
+            ResponseObject ro = ResponseObject.CreateFromJSON(await httpResponse.Content.ReadAsStringAsync());
 
-        if (ro.uniqueKey != null)
-        {
-            PlayerPrefs.SetString("username", username);
-            PlayerPrefs.SetString("accessKey", ro.uniqueKey);
-            this.accessKey = ro.uniqueKey;
-            this.isRegisterd = true;
-            PlayerPrefs.SetInt("highscore_slow", 0);
-            PlayerPrefs.SetInt("highscore_norm", 0);
-            PlayerPrefs.SetInt("highscore_fast", 0);
-            GameObject.Find("RegisterMenu").SetActive(false);
+            if (ro.uniqueKey != null)
+            {
+                PlayerPrefs.SetString("username", username);
+                PlayerPrefs.SetString("accessKey", ro.uniqueKey);
+                this.accessKey = ro.uniqueKey;
+                this.isRegisterd = true;
+                PlayerPrefs.SetInt("highscore_slow", 0);
+                PlayerPrefs.SetInt("highscore_norm", 0);
+                PlayerPrefs.SetInt("highscore_fast", 0);
+                GameObject.Find("RegisterMenu").SetActive(false);
+            }
+            else
+            {
+                GameObject.Find("RegisterMenu").transform.Find("ErrorMessage").GetComponent<UnityEngine.UI.Text>().text = ro.responseCode + " : " + ro.msg;
+                Debug.LogError(ro.responseCode + " : " + ro.msg);
+            }
         }
         else
         {
-            GameObject.Find("RegisterMenu").transform.Find("ErrorMessage").GetComponent<UnityEngine.UI.Text>().text = ro.responseCode + " : " + ro.msg;
-            Debug.LogError(ro.responseCode + " : " + ro.msg);
+            Debug.LogError("User not registerd!");
         }
     }
 
 
-    public async void Login(string accessKey)
+    public async void Login(string accessKey = "")
     {
-        if (accessKey.Length < 1)
+        if (accessKey.Length < 1 && !this.isRegisterd)
         {
             GameObject.Find("RegisterMenu").transform.Find("ErrorMessage").GetComponent<UnityEngine.UI.Text>().text = "Accesskey can not be empty!";
             return;
+        }
+        else if (this.isRegisterd)
+        {
+            accessKey = PlayerPrefs.GetString("accessKey");
         }
 
         FormUrlEncodedContent postData = new FormUrlEncodedContent(new[]
@@ -129,7 +143,7 @@ public class ScoreManager
             new KeyValuePair<string, string>("uniqueKey", accessKey),
         });
 
-        HttpResponseMessage httpResponse = await client.PostAsync(serverUrl, postData);
+        HttpResponseMessage httpResponse = await client.PostAsync(serverUrl + "?action=login", postData);
         LoginResponseObject ro = LoginResponseObject.CreateFromJSON(await httpResponse.Content.ReadAsStringAsync());
 
         if (ro.username != null)

@@ -2,7 +2,7 @@
 using System.Collections;
 using UnityEngine.UI;
 
-public class OverlayControler : MonoBehaviour
+public class OverlayController : MonoBehaviour
 {
 	public bool run { get; set; }
 	public bool isFirst1 { get; set; }

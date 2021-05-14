@@ -146,8 +146,8 @@ public class GameManager : MonoBehaviour
 				if (this.idSequenceCopy.Count == this.idSequence.Count)
                 {
 					int nextId = this.idSequenceCopy[0];
-					GameObject.Find("ButtonPanel").transform.Find("Button (" + nextId + ")").Find("Overlay").GetComponent<OverlayControler>().isFirst1 = true;
-					GameObject.Find("ButtonPanel").transform.Find("Button (" + nextId + ")").Find("Overlay").GetComponent<OverlayControler>().run = true;
+					GameObject.Find("ButtonPanel").transform.Find("Button (" + nextId + ")").Find("Overlay").GetComponent<OverlayController>().isFirst1 = true;
+					GameObject.Find("ButtonPanel").transform.Find("Button (" + nextId + ")").Find("Overlay").GetComponent<OverlayController>().run = true;
 					this.idSequenceCopy.RemoveAt(0);
 				}
 				else if (this.idSequenceCopy.Count < 1)
@@ -159,7 +159,7 @@ public class GameManager : MonoBehaviour
 				else
                 {
 					int nextId = this.idSequenceCopy[0];
-					GameObject.Find("ButtonPanel").transform.Find("Button (" + nextId + ")").Find("Overlay").GetComponent<OverlayControler>().run = true;
+					GameObject.Find("ButtonPanel").transform.Find("Button (" + nextId + ")").Find("Overlay").GetComponent<OverlayController>().run = true;
 					this.idSequenceCopy.RemoveAt(0);
 				}
 				showNextBox = false;
@@ -306,7 +306,8 @@ public class GameManager : MonoBehaviour
 			case 6:
 				// Logs user out and removes local data
 				PlayerPrefs.DeleteAll();
-				this.scoreManager.isRegisterd = false;
+				this.scoreManager = new ScoreManager();
+				this.scoreManager.Init();
 				this.init2 = true;
 				break;
 			case 7:
