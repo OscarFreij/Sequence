@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -187,6 +188,7 @@ public class GameManager : MonoBehaviour
         {
 			if (showNextBox)
             {
+
 				ToggleInput(0);
 				Debug.Log("SequenceDisplay Running!");
 				if (this.idSequenceCopy.Count == this.idSequence.Count)
@@ -212,6 +214,12 @@ public class GameManager : MonoBehaviour
 
 			}
         }
+
+		if (!init && SceneManager.GetActiveScene().name == "Game")
+        {
+			this.KeypadToButton();
+
+		}
     }
 
 	/// <summary>
@@ -283,19 +291,33 @@ public class GameManager : MonoBehaviour
 
 	public void ToggleInput(int state = -1)
     {
-        for (int i = 1; i <= 9; i++)
-        {
-			Button btn = GameObject.Find("ButtonPanel").transform.Find("Button (" + i + ")").GetComponent<Button>();
-			if (state == -1)
-            {
-				btn.interactable = !btn.interactable;
+
+		StartCoroutine(DelayAction((action) => {
+			for (int i = 1; i <= 9; i++)
+			{
+				Button btn = GameObject.Find("ButtonPanel").transform.Find("Button (" + i + ")").GetComponent<Button>();
+				if (state == -1)
+				{
+					btn.interactable = !btn.interactable;
+				}
+				else
+				{
+					btn.interactable = System.Convert.ToBoolean(state);
+				}
 			}
-			else
-            {
-				btn.interactable = System.Convert.ToBoolean(state);
-			}
-		}
+		}));
+
+
+
+		
     }
+
+	public IEnumerator DelayAction(System.Action<bool> action)
+    {
+		yield return new WaitForSeconds(0.1f);
+		action(false);
+
+	}
 
 	public void StepScreen()
     {
@@ -469,5 +491,48 @@ public class GameManager : MonoBehaviour
 			action(true);
 		}
 		
+	}
+
+	private void KeypadToButton()
+    {
+		var pointer = new PointerEventData(EventSystem.current);
+		if (Input.GetKeyDown(KeyCode.Keypad1))
+        {
+			ExecuteEvents.Execute(GameObject.Find("Button (1)"), pointer, ExecuteEvents.submitHandler);
+		}
+		else if (Input.GetKeyDown(KeyCode.Keypad2))
+		{
+			ExecuteEvents.Execute(GameObject.Find("Button (2)"), pointer, ExecuteEvents.submitHandler);
+		}
+		else if (Input.GetKeyDown(KeyCode.Keypad3))
+		{
+			ExecuteEvents.Execute(GameObject.Find("Button (3)"), pointer, ExecuteEvents.submitHandler);
+		}
+		else if (Input.GetKeyDown(KeyCode.Keypad4))
+        {
+			ExecuteEvents.Execute(GameObject.Find("Button (4)"), pointer, ExecuteEvents.submitHandler);
+		}
+		else if (Input.GetKeyDown(KeyCode.Keypad5))
+		{
+			ExecuteEvents.Execute(GameObject.Find("Button (5)"), pointer, ExecuteEvents.submitHandler);
+		}
+		else if (Input.GetKeyDown(KeyCode.Keypad6))
+		{
+			ExecuteEvents.Execute(GameObject.Find("Button (6)"), pointer, ExecuteEvents.submitHandler);
+		}
+		else if (Input.GetKeyDown(KeyCode.Keypad7))
+		{
+			ExecuteEvents.Execute(GameObject.Find("Button (7)"), pointer, ExecuteEvents.submitHandler);
+		}
+		else if (Input.GetKeyDown(KeyCode.Keypad8))
+		{
+			ExecuteEvents.Execute(GameObject.Find("Button (8)"), pointer, ExecuteEvents.submitHandler);
+		}
+		else if (Input.GetKeyDown(KeyCode.Keypad9))
+		{
+			ExecuteEvents.Execute(GameObject.Find("Button (9)"), pointer, ExecuteEvents.submitHandler);
+		}
+
+        
 	}
 }

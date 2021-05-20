@@ -36,7 +36,7 @@ public class ScoreManager
 
     private HttpClient client { get; set; }
     public bool initiated { get; private set; } = false;
-    private string accessKey { get; set; } = "jkvA4YRMuNrCvrr7x5bqPFffGYXRVvHL";
+    private string accessKey { get; set; } = "";
     public bool isRegisterd { get; set; } = false;
     public string serverUrl { get; private set; } = "http://sequence.offthegridcg.me/callback.php";
 
