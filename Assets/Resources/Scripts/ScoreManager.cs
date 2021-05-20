@@ -1,6 +1,8 @@
 using System.Net.Http;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
+using UnityEngine.Networking;
 
 public class ScoreManager
 {

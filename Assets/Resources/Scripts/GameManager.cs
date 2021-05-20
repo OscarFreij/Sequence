@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -12,7 +14,7 @@ public class GameManager : MonoBehaviour
     public bool showNextBox { get; set; }
 	public bool sequenceDone { get; private set; }
 	public bool stepDone { get; private set; }
-
+	public bool offlineMode { get; private set; }
 
 	public List<int> idSequence { get; private set; }
 	public List<int> idSequenceCheck { get; private set; }
@@ -30,6 +32,7 @@ public class GameManager : MonoBehaviour
 	public GameObject UI_AccountMenu { get; set; }
 	public GameObject UI_RegisterMenu { get; set; }
 	public GameObject UI_DifficultyMenu { get; set; }
+	public GameObject UI_ConnectionMenu { get; set; }
 
 	public int difficultyId { get; private set; }
 
@@ -63,8 +66,11 @@ public class GameManager : MonoBehaviour
 		idSequenceCopy = new List<int>();
 
 		this.sm = transform.GetComponent<SoundManager>();
+
 		this.scoreManager = new ScoreManager();
 		this.scoreManager.Init();
+
+		this.offlineMode = false;
 	}
 	
 	// Update is called once per frame
@@ -107,7 +113,12 @@ public class GameManager : MonoBehaviour
 			{
 				this.UI_DifficultyMenu = GameObject.Find("DifficultyMenu");
 			}
-			
+
+			if (this.UI_ConnectionMenu == null)
+			{
+				this.UI_ConnectionMenu = GameObject.Find("ConnectionMenu");
+			}
+
 			this.UI_RegisterMenu.SetActive(true);
 			this.UI_DifficultyMenu.SetActive(true);
 
@@ -125,6 +136,12 @@ public class GameManager : MonoBehaviour
 			this.UI_DifficultyMenu.transform.Find("Normal").GetComponent<Button>().onClick.AddListener(delegate { StartGameAction(1); });
 			this.UI_DifficultyMenu.transform.Find("Fast").GetComponent<Button>().onClick.AddListener(delegate { StartGameAction(2); });
 
+			this.UI_DifficultyMenu.transform.Find("Fast").GetComponent<Button>().onClick.AddListener(delegate { StartGameAction(2); });
+			this.UI_DifficultyMenu.transform.Find("Fast").GetComponent<Button>().onClick.AddListener(delegate { StartGameAction(2); });
+
+			this.UI_ConnectionMenu.transform.Find("Continue").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(9); });
+			this.UI_ConnectionMenu.transform.Find("Quit").GetComponent<Button>().onClick.AddListener(delegate { MainMenuAction(2); });
+
 
 			this.UI_AccountMenu.SetActive(false);
 			this.UI_DifficultyMenu.SetActive(false);
@@ -133,6 +150,35 @@ public class GameManager : MonoBehaviour
 				this.UI_RegisterMenu.SetActive(false);
 				Debug.Log("User account has accessKey, closing register menu!");
 			}
+
+			if (!this.offlineMode)
+			{
+				this.UI_ConnectionMenu.SetActive(true);
+				this.UI_ConnectionMenu.transform.Find("ConnectionText").GetComponent<Text>().text = "Connecting...";
+				this.UI_ConnectionMenu.transform.Find("Continue").GetComponent<Button>().interactable = false;
+				StartCoroutine(checkInternetConnection((isConnected) => {
+					if (!isConnected)
+					{
+						Debug.LogWarning("Unable to connect to server! - Restart game to try connection again!");
+						this.UI_ConnectionMenu.transform.Find("ConnectionText").GetComponent<Text>().text = "Could not connect to server!";
+						this.UI_ConnectionMenu.transform.Find("Continue").GetComponent<Button>().interactable = true;
+					}
+					else
+					{
+						this.UI_ConnectionMenu.transform.Find("ConnectionText").GetComponent<Text>().text = "Connected";
+						this.UI_ConnectionMenu.SetActive(false);
+					}
+				}));
+			}
+			else
+            {
+				GameObject.Find("ButtonPanel").transform.Find("Account").GetComponent<Button>().interactable = false;
+				this.UI_ConnectionMenu.SetActive(false);
+				this.UI_RegisterMenu.SetActive(false);
+				Debug.Log("User playing in offline mode!");
+			}
+			
+
 			init2 = false;
 
 		}
@@ -212,7 +258,7 @@ public class GameManager : MonoBehaviour
 						break;
 				}
 
-                if (PlayerPrefs.GetInt(localdofficultyScoreName) < this.idSequence.Count)
+                if (PlayerPrefs.GetInt(localdofficultyScoreName) < this.idSequence.Count && !this.offlineMode)
                 {
 					PlayerPrefs.SetInt(localdofficultyScoreName, this.idSequence.Count);
 					this.scoreManager.UploadScore(this.idSequence.Count.ToString(), this.difficultyId);
@@ -318,6 +364,13 @@ public class GameManager : MonoBehaviour
 				// Closes AccountMenu
 				this.UI_AccountMenu.SetActive(false);
 				break;
+			case 9:
+				// Run game in offline mode!
+				this.offlineMode = true;
+				GameObject.Find("ButtonPanel").transform.Find("Account").GetComponent<Button>().interactable = false;
+				this.UI_RegisterMenu.SetActive(false);
+				this.UI_ConnectionMenu.SetActive(false);
+				break;
 		}
     }
 
@@ -396,5 +449,25 @@ public class GameManager : MonoBehaviour
         
 		this.overlayOnTimeDelay = this.overlayOnTime * 0.2f;
 
+	}
+
+	IEnumerator checkInternetConnection(System.Action<bool> action)
+	{
+		UnityWebRequest webRequest = new UnityWebRequest();
+		webRequest.timeout = 5;
+		webRequest.url = "http://sequence.offthegridcg.me";
+
+		yield return webRequest.SendWebRequest();
+		if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
+		{
+			Debug.Log(0);
+			action(false);
+		}
+		else
+		{
+			Debug.Log(1);
+			action(true);
+		}
+		
 	}
 }
